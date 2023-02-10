@@ -41,7 +41,7 @@ def hash_fn(plaintext):
     p_hash = plaintext[0]
     for letter in plaintext[1:]:
         p_hash = chr(ord('a') + (ord(letter) - ord('a') +
-                                 ord(p_hash[-1]) - ord('a')) % 26)
+                                 ord(p_hash) - ord('a')) % 26)
     return p_hash
 
 
