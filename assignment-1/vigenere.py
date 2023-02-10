@@ -6,6 +6,7 @@ from tqdm import tqdm
 PLAINTEXT_LENGTH = 512  # Always a multiple of N
 N = 8  # Number of columns in the hash table
 M = PLAINTEXT_LENGTH // N  # Number of N-bit blocks in the input
+KEY = "zydf"
 
 
 def encrypt(plaintext, key):
@@ -29,7 +30,8 @@ def decrypt(ciphertext, key):
     for letter in ciphertext:
         if letter in string.ascii_lowercase:
             decrypted += chr(
-                ord("a") + (ord(letter) - ord("a") - (next(key_iter) - ord("a"))) % 26
+                ord("a") + (ord(letter) - ord("a") -
+                            (next(key_iter) - ord("a"))) % 26
             )
         else:
             decrypted += letter
@@ -46,14 +48,15 @@ def is_recognizable(plaintext):
 
 
 def hash_fn(plaintext):
-    # Return a plaintext p that satisfies p = (s, Hash(s))
+    # Return the hash of the plaintext
     p_hash = ["" for _ in range(M)]
     for i in range(M):
         p_hash[i] = plaintext[i * N]
         for j in range(1, N):
             p_hash[i] = chr(
                 ord("a")
-                + (ord(p_hash[i]) - ord("a") + ord(plaintext[i * N + j]) - ord("a"))
+                + (ord(p_hash[i]) - ord("a") +
+                   ord(plaintext[i * N + j]) - ord("a"))
                 % 26
             )
     return "".join(p_hash)
@@ -73,13 +76,11 @@ def brute_force_solve(ciphertext, key_length):
 
 if __name__ == "__main__":
     plaintexts = [
-        ("".join(choice(string.ascii_lowercase) for _ in range(PLAINTEXT_LENGTH)))
-        for _ in range(5)
+        'okacnqdvatlqphozmjwcboriefhffxblekmionhikpipruqfxnaqfxxweqsxeddjvlctljukbomvyzqxdrhgutqsqevuguquhqeyqtalmqmqypcmqcklohfimmmzetfyhajceionoxcrfwptbxkzjhvuhiaiahwtduifysbxvrjjqyzaqixchljizqwxrsnmmrhzlbprqichqonulveeavkqfzsbeczdcbzfxxgtxrftemxardkfbuohcfytxwrfondbgdbxkcewndjjpdvwdorpoiimroypofocnanbvbrsrqcyxwbwncwymmgoavkyblgmuqnmpbtktsmmzqsubsizjfhxerwhnpwzjrzneemukosdrynelbzoaqenhsjcejbakcibyhehnnjuexkijpurdxwkyrexbgmvgdvrwnewxxrcxmqeeaarcxgajgadfqexdxsrxorqgzxuhqwujtqbobqjhkrvcravedtupvlpynyrkgnkctoboqsnbhxbbdhjycvczgcttfvjfnmtyrgqbsjfazznmugikmzvncbqjhfrjtcwjwyxfogrikxp', 'antvglzszwfbfbyfgsrwyrksygxzvmaevovtpyalxuhzlnsmlbrofeandrtkbmxvifrztapieoqbcgvtymxfnoxisstsfnswnkkyeitdgblqtyckpmxtnxlhjkefevzwppbvupzhasfnjjspqvkaigxsasvevssxwqdzwgspxjawnfydrsoxjbtfewvzsyijbcsddxibskkngzwdfecpjexdeyncxsistjebgbpxekryfowakmxhfbdqszhiswvmkuqtbtyhehydfnagjlqfqnqbrfqvkrideswawwucoabmzwsctrobthzitkxhwfckwuwwkcomgnfmhsqsnyxtzekebkokwjfdgxdgcbkrfrdukiiszgiimzdhefrpiqowpnlsbasyjktltmauxuuwmtuqxfgfynopkphtapbtgviwylkrzjdaimlaozdlrgxhqdlcxeyczkuxaxktkxhzkqnmabopxqcejlqolvjwpwlccetgjmmgxxzvtzchisxgjkclvznctfsbnltwpjytxvcbhdngaszbmkjtgqguurswqlqxwwwbipqchamxjdbe',
+        'fpotpsriyyfwknucqbaikfrimtvebypnueslrpmlqydzpjqrdmiapurvnshfxzieuieqztihfalglksgbscjxsvnjuorpehcycokrdaytmfyugqdsfjhziefymbwlnzrfrfxgrabtvcdlffbuhusdzpnmqubmxbzildifhlklhwdtmhloxqafrwybjtrfeomrfparfjunswgxpwzthwzcnxmgfawtfctufqsosfqbzorayktkqkpycizpiatnobnygcfqetulaoqkvgjizcsfyjpipmsqozxjxlsztfqunoaetpkvjxqqyxtswwglthcyxcksdzzwtfvpnrwjkejsbyhdezpjuefvmpncywnjcnhusnvlkfadkrgbvbbxhiejppbglnpnechmhawxbqevzzoafykniscdbrwlnletidskafbaoanlkofgacnkpekjtzlpyhfwsivkxhjbdhilxzlpflbogywywgiyotbxipqbpzouhpdyvzpnohbhnzrhqnfevszdpbkqbdvwprglordkotaiggfsjcbwrvdaeehszkohpzcempiloluonat', 'cjwdnjpmwipqxkrkdxhlumahrmvqrnumspagkvpfmhkyneenlockzqxxuegbehogiemraoaskuvvunisikyqmqwourlapfwoemliktogyqkgaphhvvjtqbnobenzdrhhhgjjilugpvrzfkquwfngrathzyvdkckhvxrjgtruhunnkxwovjvoqrgmkmejxbghvhlbhmjrpjchcdjuvtovoeruqhtbuzzihvxdxntygyxxhjsuynekeregwvltsotdbuigcqwcvsyuwespxkmzfacoktmrnfynlqgkzgeindbhhdkhtfwxsxgbpcmdazhwxktuiwvccixxndlsrdijbsjpsdwkfgansuofezzfjooridnmuuwvlwsgiombhsnfugsqycyglvnyqmllgobhtlvujcnvljsecujtsmlqvlqeeucwyyjtbqojpwbuewztacyzqrvmgpmuoqlkybfcxxoxpuvtyretmcafmzjcouzcvhorympjlirnjvabwjqghrfymjukvbsaghkzyzlycsmuhpardaexzmnjiznivxczmmkampvjdwmynaljpqfg', 'bqloyflbhyhqqtswyhhbqnbawicplnpskdhgjlthzmvwrjmtutjfgbncjzhckjuuwmqtkrzyxxirvggvbecwsibkfpdasjvtukaqszatwfhckvbboxmorxddxhybgphbxgyfslihhwshgjlesdqrlwfnercmxlhuyhcugciiwfdwyvymajhojbzdtfrofisahcgjnhcbxgdiwgcaiouradklubdorbptgiilullkgcsclzighncxlnorxgpywdksrltytmyuakapfdkyceoskgvooexmvpzlrkrqilimxtalkjqgukjoqylyugdasfktvpxuxliksrgshlfobicrruuptuvomsglmqbgpyhzgqiutubcanghjgxlbqmgeukierjdspoqbmzkvllufhejvmibwhsilafvvtdaskjknorbeexdgaunqcaqumktnexrpujuylhrrdzkikgxpgzvjwzuxpsbcpwoyqcrvjqbsbfxojhibyjdlkrpwqsyhcngfzrauhxypvomerfgygbszdqivsfmhawrqplvvqydbswrcoxzshpombvotyngchme'
     ]
-    plaintexts = [(p + hash_fn(p)) for p in plaintexts]
-    print([is_recognizable(p) for p in plaintexts])
-    ciphertexts = [encrypt(p, "zydf") for p in plaintexts]
-    decrypted = [decrypt(c, "zydf") for c in ciphertexts]
-    solved = [brute_force_solve(c, 4) for c in ciphertexts]
+    ciphertexts = [encrypt(p, KEY) for p in plaintexts]
+    decrypted = [decrypt(c, KEY) for c in ciphertexts]
+    solved = brute_force_solve(ciphertexts[0], 4)
     print(solved)
     print([plaintexts[i] == decrypted[i] for i in range(len(plaintexts))])
