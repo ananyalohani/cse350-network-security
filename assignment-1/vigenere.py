@@ -8,25 +8,30 @@ M = PLAINTEXT_LENGTH // N  # Number of N-bit blocks in the input
 
 
 def encrypt(plaintext, key):
-    # Shift each letter in plaintext by the corresponding letter in key
+    # Shift each letter right in plaintext by the corresponding letter in key
     key_iter = itertools.cycle(map(ord, key))
     ciphertext = ""
     for letter in plaintext:
         if letter in string.ascii_lowercase:
             ciphertext += chr(ord('a') + (
                 (next(key_iter) - ord('a') + ord(letter) -
-                    ord('a') + 2) % 26))
+                    ord('a')) % 26))
         else:
             ciphertext += letter
     return ciphertext
 
 
 def decrypt(ciphertext, key):
-    # Decryption is the same as encryption, but with the inverse key
-    key_inv = ""
-    for k in key:
-        key_inv += chr(ord('a') + (22 - (ord(k) - ord('a'))) % 26)
-    return encrypt(ciphertext, key_inv)
+    # Shift each letter left in ciphertext by the corresponding letter in key
+    key_iter = itertools.cycle(map(ord, key))
+    decrypted = ""
+    for letter in ciphertext:
+        if letter in string.ascii_lowercase:
+            decrypted += chr(ord('a') + (ord(letter) - ord('a') -
+                             (next(key_iter) - ord('a'))) % 26)
+        else:
+            decrypted += letter
+    return decrypted
 
 
 def is_recognizable(plaintext):
@@ -57,6 +62,7 @@ if __name__ == "__main__":
     plaintexts = [(''.join(choice(string.ascii_lowercase)
                            for _ in range(PLAINTEXT_LENGTH))) for _ in range(5)]
     plaintexts = [(p + hash_fn(p)) for p in plaintexts]
+    print([is_recognizable(p) for p in plaintexts])
     ciphertexts = [encrypt(p, "abcd") for p in plaintexts]
     decrypted = [decrypt(c, "abcd") for c in ciphertexts]
     print([plaintexts[i] == decrypted[i] for i in range(len(plaintexts))])
