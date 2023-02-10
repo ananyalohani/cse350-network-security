@@ -60,6 +60,7 @@ def hash_fn(plaintext):
 
 
 def brute_force_solve(ciphertext, key_length):
+    # Brute force solve the Vigenere cipher with key length key_length
     for key in tqdm(
         itertools.product(string.ascii_lowercase, repeat=key_length),
         total=26**key_length,
