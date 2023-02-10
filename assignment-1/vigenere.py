@@ -2,7 +2,9 @@ import itertools
 import string
 from random import choice
 
-PLAINTEXT_LENGTH = 6
+PLAINTEXT_LENGTH = 512  # Always a multiple of N
+N = 8  # Number of columns in the hash table
+M = PLAINTEXT_LENGTH // N  # Number of N-bit blocks in the input
 
 
 def encrypt(plaintext, key):
@@ -29,8 +31,8 @@ def decrypt(ciphertext, key):
 
 def is_recognizable(plaintext):
     # Return True if plaintext p satisfies p = (s, Hash(s))
-    hash_s = plaintext[-1]
-    s = plaintext[:-1]
+    s = plaintext[:PLAINTEXT_LENGTH]
+    hash_s = plaintext[PLAINTEXT_LENGTH:]
     if hash_fn(s) == hash_s:
         return True
     return False
@@ -38,11 +40,13 @@ def is_recognizable(plaintext):
 
 def hash_fn(plaintext):
     # Return a plaintext p that satisfies p = (s, Hash(s))
-    p_hash = plaintext[0]
-    for letter in plaintext[1:]:
-        p_hash = chr(ord('a') + (ord(letter) - ord('a') +
-                                 ord(p_hash) - ord('a')) % 26)
-    return p_hash
+    p_hash = ['' for _ in range(M)]
+    for i in range(M):
+        p_hash[i] = plaintext[i * N]
+        for j in range(1, N):
+            p_hash[i] = chr(ord('a') + (ord(p_hash[i]) - ord('a') +
+                            ord(plaintext[i * N + j]) - ord('a')) % 26)
+    return ''.join(p_hash)
 
 
 def brute_force_solve(ciphertext, key_length):
@@ -51,7 +55,7 @@ def brute_force_solve(ciphertext, key_length):
 
 if __name__ == "__main__":
     plaintexts = [(''.join(choice(string.ascii_lowercase)
-                  for i in range(PLAINTEXT_LENGTH))) for j in range(5)]
+                           for _ in range(PLAINTEXT_LENGTH))) for _ in range(5)]
     plaintexts = [(p + hash_fn(p)) for p in plaintexts]
     ciphertexts = [encrypt(p, "abcd") for p in plaintexts]
     decrypted = [decrypt(c, "abcd") for c in ciphertexts]
