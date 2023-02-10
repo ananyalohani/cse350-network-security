@@ -1,6 +1,9 @@
+# CSE350: Network Security
+# Programming Assignment 1
+# Authors: Ananya Lohani (2019018), Mihir Chaturvedi (2019061)
+
 import itertools
 import string
-from random import choice
 from tqdm import tqdm
 
 PLAINTEXT_LENGTH = 512  # Always a multiple of N
@@ -81,6 +84,6 @@ if __name__ == "__main__":
     ]
     ciphertexts = [encrypt(p, KEY) for p in plaintexts]
     decrypted = [decrypt(c, KEY) for c in ciphertexts]
-    solved = brute_force_solve(ciphertexts[0], 4)
-    print(solved)
     print([plaintexts[i] == decrypted[i] for i in range(len(plaintexts))])
+    solved = brute_force_solve(ciphertexts[0], 4)
+    print("Key found:", solved)
