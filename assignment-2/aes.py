@@ -1,7 +1,3 @@
-import os
-import sys
-import math
-from tabulate import tabulate
 import galois
 
 
@@ -89,7 +85,7 @@ class AES(object):
         self.round_keys = None
         self.master_key = key
         self.round_keys = self.get_round_keys(key)
-        self.gf = galois.GF(2**8)
+        self.gf = galois.GF(2**8, irreducible_poly="x^8 + x^4 + x^3 + x + 1")
 
     def left_rotate(self, word):
         """ Rotate a 32-bit word 8 bits to the left """
@@ -163,23 +159,28 @@ class AES(object):
         """
             Shift rows in the state
         """
+        shift = [
+            [0, 1, 2, 3],
+            [1, 2, 3, 0],
+            [2, 3, 0, 1],
+            [3, 0, 1, 2]
+        ] if not inv else [
+            [0, 3, 2, 1],
+            [1, 0, 3, 2],
+            [2, 1, 0, 3],
+            [3, 2, 1, 0]
+        ]
+        state_copy = [row[:] for row in state]
         for i in range(4):
-            j = -i if inv else i
-            state[i] = state[i][j:] + state[i][:j]
+            for j in range(4):
+                state[i][j] = state_copy[shift[i][j]][j]
         return state
-
-    def g_multiply(self, M, v):
-        """
-            Galois multiplication of a matrix and a vector in GF(2**8)
-        """
-        g = self.gf
-        return [int(x) for x in g(M) @ g(v)]
 
     def mix_columns(self, state, inv=False):
         """
             Mix columns in the state
         """
-        mc = [
+        mc = self.gf([
             [0x02, 0x03, 0x01, 0x01],
             [0x01, 0x02, 0x03, 0x01],
             [0x01, 0x01, 0x02, 0x03],
@@ -189,14 +190,8 @@ class AES(object):
             [0x09, 0x0E, 0x0B, 0x0D],
             [0x0D, 0x09, 0x0E, 0x0B],
             [0x0B, 0x0D, 0x09, 0x0E]
-        ]
-
-        for i in range(4):
-            col = [state[j][i] for j in range(4)]
-            col = list(self.g_multiply(mc, col))
-            for j in range(4):
-                state[j][i] = col[j]
-        return state
+        ])
+        return [list(map(int, mc @ self.gf(col))) for col in state]
 
     def encrypt(self, plaintext, iv):
         """
@@ -208,8 +203,6 @@ class AES(object):
         plaintext_blocks = self.bytes_to_blocks(plaintext, 16)
         ciphertext_blocks = []
         prev = iv
-
-        print(tabulate(plaintext_blocks))
 
         for block in plaintext_blocks:
             state = self.bytes_to_blocks(self.xor(block, prev))
@@ -256,10 +249,7 @@ class AES(object):
                 state = self.sub_bytes(state, inv=True)
 
             state = self.add_round_key(state, self.round_keys[0])
-
-            block = self.blocks_to_bytes(state)
-            plaintext_blocks.append(self.xor(block, prev))
+            plaintext_blocks.append(self.xor(self.blocks_to_bytes(state), prev))
             prev = block
 
-        print(tabulate(plaintext_blocks))
         return self.unpad_msg(b''.join(plaintext_blocks))
