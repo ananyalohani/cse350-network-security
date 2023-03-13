@@ -1,4 +1,5 @@
 import galois
+from tabulate import tabulate
 
 
 class AES(object):
@@ -85,7 +86,7 @@ class AES(object):
         self.round_keys = None
         self.master_key = key
         self.round_keys = self.get_round_keys(key)
-        self.gf = galois.GF(2**8, irreducible_poly="x^8 + x^4 + x^3 + x + 1")
+        self.gf = galois.GF(2**8)
 
     def left_rotate(self, word):
         """ Rotate a 32-bit word 8 bits to the left """
@@ -108,11 +109,7 @@ class AES(object):
 
     def unpad_msg(self, msg):
         """ Remove the padding from a message """
-        padding_len = msg[-1]
-        assert padding_len > 0
-        message, padding = msg[:-padding_len], msg[-padding_len:]
-        assert all(p == padding_len for p in padding)
-        return message
+        return msg[:-msg[-1]]
 
     def get_round_keys(self, key):
         """
@@ -213,6 +210,9 @@ class AES(object):
                 state = self.shift_rows(state)
                 state = self.mix_columns(state)
                 state = self.add_round_key(state, self.round_keys[i])
+                if i == 1 or i == 9:
+                    print(f"\nEncryption Round {i}")
+                    print(tabulate(state, tablefmt="fancy_grid"))
 
             state = self.sub_bytes(state)
             state = self.shift_rows(state)
@@ -243,13 +243,17 @@ class AES(object):
             state = self.sub_bytes(state, inv=True)
 
             for i in range(self.N_ROUNDS - 1, 0, -1):
+                if i == 1 or i == 9:
+                    print(f"\nDecryption Round {10 - i}")
+                    print(tabulate(state, tablefmt="fancy_grid"))
                 state = self.add_round_key(state, self.round_keys[i])
                 state = self.mix_columns(state, inv=True)
                 state = self.shift_rows(state, inv=True)
                 state = self.sub_bytes(state, inv=True)
 
             state = self.add_round_key(state, self.round_keys[0])
-            plaintext_blocks.append(self.xor(self.blocks_to_bytes(state), prev))
+            plaintext_blocks.append(
+                self.xor(self.blocks_to_bytes(state), prev))
             prev = block
 
         return self.unpad_msg(b''.join(plaintext_blocks))
