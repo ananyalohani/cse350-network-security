@@ -448,3 +448,6 @@ class AES(object):
             print()
 
         return self.unpad_msg(b''.join(plaintext_blocks))
+
+
+help(AES)
