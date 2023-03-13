@@ -1,7 +1,64 @@
 import galois
 from tabulate import tabulate
 
+
 class AES(object):
+    """
+    A class that implements the AES encryption algorithm with 10 rounds in CBC mode.
+
+    ...
+
+    Attributes
+    ----------
+    KEY_SIZE : int
+        the size of the key in bytes (16)
+    N_ROUNDS : int
+        the number of rounds (10)
+    SBOX : list
+        the S-box used for SubBytes in encryption
+    INV_SBOX : list
+        the inverse S-box used for SubBytes in decryption
+    RC : list
+        the round constants used for round key generation
+
+    master_key : bytes
+        the master key used for encryption and decryption
+    round_keys : list
+        the round keys generated from the master key
+    gf : galois.Galois
+        the Galois field (2**8) used for multiplication in MixColumns
+
+    Methods
+    -------
+    left_rotate(word) -> bytes :
+        Rotates a word (a 4-byte sequence) to the left by one byte.
+    bytes_to_blocks(data) -> list :
+        Converts a byte string into a list of n-byte blocks.
+    blocks_to_bytes(blocks) -> bytes :
+        Converts a list of blocks into a byte string.
+    xor(a, b) -> bytes :
+        Performs the XOR operation between two byte strings of the same length.
+    pad_msg(msg) -> bytes :
+        Pads a message to a length that is a multiple of 128 bits.
+    unpad_msg(msg) -> bytes :
+        Removes the padding from a message.
+
+    get_round_keys(key) -> list :
+        Generates a list of 11 round keys from the master key.
+
+    add_round_key(state, round_key) -> list :
+        Performs the AddRoundKey step of the encryption & decryption process.
+    sub_bytes(state, inv=False) -> list :
+        Performs the SubBytes step of the encryption & decryption process.
+    shift_rows(state, inv=False) -> list :
+        Performs the ShiftRows step of the encryption & decryption process.
+    mix_columns(state, inv=False) -> list :
+        Performs the MixColumns step of the encryption & decryption process.
+    encrypt(state, iv) -> bytes :
+        Encrypts a message using the AES algorithm in CBC mode.
+    decrypt(state, iv) -> bytes :
+        Decrypts an encrypted message using the AES algorithm in CBC mode.
+    """
 
     KEY_SIZE = 16
     N_ROUNDS = 10
@@ -79,41 +136,103 @@ class AES(object):
     RC = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36]
 
     def __init__(self, key):
-        """ Initialize the AES cipher """
+        """
+        Initializes a new instance of the AES class with the given key.
+
+        Parameters:
+        key (bytes): A byte string representing the encryption key. Must have a length of 16 bytes.
+        """
+
         assert len(key) == 16, "Key must be 16 bytes long"
 
-        self.round_keys = None
         self.master_key = key
         self.round_keys = self.get_round_keys(key)
         self.gf = galois.GF(2**8)
 
     def left_rotate(self, word):
-        """ Rotate a 32-bit word 8 bits to the left """
+        """
+        Rotates a word (a 4-byte sequence) to the left by one byte.
+
+        Parameters:
+        word (bytes): A 4-byte sequence to be rotated.
+
+        Returns:
+        bytes: The rotated 4-byte sequence.
+        """
         return word[1:] + word[:1]
 
     def bytes_to_blocks(self, data, n=4):
+        """
+        Converts a byte string into a list of n-byte blocks.
+
+        Parameters:
+        data (bytes): The byte string to be converted into blocks.
+        n (int): The number of bytes in each block. Default is 4.
+
+        Returns:
+        list: A list of n-byte blocks.
+        """
         return [list(data[i:i+n]) for i in range(0, len(data), n)]
 
     def blocks_to_bytes(self, blocks):
+        """
+        Converts a list of blocks into a byte string.
+
+        Parameters:
+        blocks (list): A list of blocks, where each block is a list of n-byte sequences.
+
+        Returns:
+        bytes: The byte string obtained by concatenating the blocks.
+        """
         return bytes(sum(blocks, []))
 
     def xor(self, a, b):
-        """ XOR two 32-bit words """
+        """
+        Performs the XOR operation between two byte strings of the same length.
+
+        Parameters:
+        a (bytes): The first byte string.
+        b (bytes): The second byte string.
+
+        Returns:
+        bytes: The byte string resulting from the XOR operation.
+        """
         return bytes(i ^ j for i, j in zip(a, b))
 
     def pad_msg(self, msg):
-        """ Pad the message to a multiple of 16 bytes """
+        """
+        Pads a message to a length that is a multiple of 128 bits.
+
+        Parameters:
+        msg (bytes): The byte string representing the message.
+
+        Returns:
+        bytes: The padded message.
+        """
         pad_len = 16 - len(msg) % 16
         return msg + bytes([pad_len]) * pad_len
 
     def unpad_msg(self, msg):
-        """ Remove the padding from a message """
+        """
+        Removes the padding from a message.
+
+        Parameters:
+        msg (bytes): The byte string representing the padded message.
+
+        Returns:
+        bytes: The unpadded message.
+        """
         return msg[:-msg[-1]]
 
     def get_round_keys(self, key):
         """
-            Generate the round keys from the cipher key
-            @param key: byte string of 16 bytes
+        Generates a list of 11 round keys from the master key.
+
+        Parameters:
+        key (bytes): The byte string representing the master key.
+
+        Returns:
+        list: A list of round keys, where each key is a list of 4 32-bit words.
         """
         key_cols = self.bytes_to_blocks(key)
         i = 0
@@ -132,7 +251,14 @@ class AES(object):
 
     def add_round_key(self, state, round_key):
         """
-            Add round key to the state
+        Performs the AddRoundKey step of the encryption & decryption process.
+
+        Parameters:
+        state (list): A matrix representing the current state of the encryption process.
+        round_key (bytes): A list representing the round key to be XORed with the state.
+
+        Returns:
+        list: The resulting state matrix after the AddRoundKey step.
         """
         for i in range(4):
             for j in range(4):
@@ -141,7 +267,15 @@ class AES(object):
 
     def sub_bytes(self, state, inv=False):
         """
-            Substitute bytes in the state using the SBOX
+        Performs the SubBytes step of the encryption & decryption process.
+
+        Parameters:
+        state (list): A matrix representing the current state of the encryption process.
+        inv (bool): If True, the inverse SubBytes operation is performed for decryption.
+        Default is False.
+
+        Returns:
+        list: The resulting state matrix after the SubBytes step.
         """
         for i in range(4):
             for j in range(4):
@@ -153,7 +287,15 @@ class AES(object):
 
     def shift_rows(self, state, inv=False):
         """
-            Shift rows in the state
+        Performs the ShiftRows step of the encryption & decryption process.
+
+        Parameters:
+        state (list): A matrix representing the current state of the encryption process.
+        inv (bool): If True, the inverse ShiftRows operation is performed for decryption.
+        Default is False.
+
+        Returns:
+        list: The resulting state matrix after the ShiftRows step.
         """
         shift = [
             [0, 1, 2, 3],
@@ -174,7 +316,15 @@ class AES(object):
 
     def mix_columns(self, state, inv=False):
         """
-            Mix columns in the state
+        Performs the MixColumns step of the encryption & decryption process.
+
+        Parameters:
+        state (list): A matrix representing the current state of the encryption process.
+        inv (bool): If True, the inverse MixColumns operation is performed for decryption.
+        Default is False.
+
+        Returns:
+        list: The resulting state matrix after the MixColumns step.
         """
         mc = self.gf([
             [0x02, 0x03, 0x01, 0x01],
@@ -191,7 +341,14 @@ class AES(object):
 
     def encrypt(self, plaintext, iv):
         """
-            Encrypt `plaintext` using given `iv` in CBC mode and PKCS#7 padding
+        Encrypts a message using the AES algorithm in CBC mode.
+
+        Parameters:
+        plaintext (bytes): The byte string representing the message to be encrypted.
+        iv (bytes): The byte string representing the initialization vector. Must have a length of 16 bytes.
+
+        Returns:
+        bytes: The byte string representing the encrypted message.
         """
         assert len(iv) == 16, "IV must be 16 bytes long"
 
@@ -217,7 +374,8 @@ class AES(object):
                 if i == 1 or i == 9:
                     transpose = list(map(list, zip(*state)))
                     table = f"\nBlock {block_count}, Encryption Round {i}\n"
-                    table += tabulate([[hex(x) for x in row] for row in transpose], headers=["a0", "a1", "a2", "a3"], tablefmt="fancy_grid")
+                    table += tabulate([[hex(x) for x in row] for row in transpose],
+                                      headers=["a0", "a1", "a2", "a3"], tablefmt="fancy_grid")
                     tables.append(table)
 
             state = self.sub_bytes(state)
@@ -238,7 +396,14 @@ class AES(object):
 
     def decrypt(self, ciphertext, iv):
         """
-            Decrypt `ciphertext` using given `iv` in CBC mode and PKCS#7 padding
+        Decrypts an encrypted message using the AES algorithm in CBC mode.
+
+        Parameters:
+        ciphertext (bytes): The byte string representing the message to be decrypted.
+        iv (bytes): The byte string representing the initialization vector. Must have a length of 16 bytes.
+
+        Returns:
+        bytes: The byte string representing the decrypted message.
         """
         assert len(iv) == 16, "IV must be 16 bytes long"
         assert len(
@@ -262,7 +427,8 @@ class AES(object):
                 if i == 1 or i == 9:
                     transpose = list(map(list, zip(*state)))
                     table = f"\nBlock {block_count}, Decryption Round {10 - i}\n"
-                    table += tabulate([[hex(x) for x in row] for row in transpose], headers=["a0", "a1", "a2", "a3"], tablefmt="fancy_grid")
+                    table += tabulate([[hex(x) for x in row] for row in transpose],
+                                      headers=["a0", "a1", "a2", "a3"], tablefmt="fancy_grid")
                     tables.append(table)
 
                 state = self.add_round_key(state, self.round_keys[i])
