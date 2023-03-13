@@ -1,7 +1,6 @@
 import galois
 from tabulate import tabulate
 
-
 class AES(object):
 
     KEY_SIZE = 16
@@ -201,7 +200,11 @@ class AES(object):
         ciphertext_blocks = []
         prev = iv
 
+        block_count = 0
         for block in plaintext_blocks:
+            block_count += 1
+            tables = []
+
             state = self.bytes_to_blocks(self.xor(block, prev))
             state = self.add_round_key(state, self.round_keys[0])
 
@@ -210,9 +213,12 @@ class AES(object):
                 state = self.shift_rows(state)
                 state = self.mix_columns(state)
                 state = self.add_round_key(state, self.round_keys[i])
+
                 if i == 1 or i == 9:
-                    print(f"\nEncryption Round {i}")
-                    print(tabulate(state, tablefmt="fancy_grid"))
+                    transpose = list(map(list, zip(*state)))
+                    table = f"\nBlock {block_count}, Encryption Round {i}\n"
+                    table += tabulate([[hex(x) for x in row] for row in transpose], headers=["a0", "a1", "a2", "a3"], tablefmt="fancy_grid")
+                    tables.append(table)
 
             state = self.sub_bytes(state)
             state = self.shift_rows(state)
@@ -221,6 +227,12 @@ class AES(object):
             block = self.blocks_to_bytes(state)
             ciphertext_blocks.append(block)
             prev = block
+
+            for i in range(len(tables[0].splitlines())):
+                for table in tables:
+                    print(table.splitlines()[i], end="\t")
+                print()
+            print()
 
         return b''.join(ciphertext_blocks)
 
@@ -236,7 +248,11 @@ class AES(object):
         plaintext_blocks = []
         prev = iv
 
+        block_count = 0
         for block in ciphertext_blocks:
+            block_count += 1
+            tables = []
+
             state = self.bytes_to_blocks(block)
             state = self.add_round_key(state, self.round_keys[-1])
             state = self.shift_rows(state, inv=True)
@@ -244,8 +260,11 @@ class AES(object):
 
             for i in range(self.N_ROUNDS - 1, 0, -1):
                 if i == 1 or i == 9:
-                    print(f"\nDecryption Round {10 - i}")
-                    print(tabulate(state, tablefmt="fancy_grid"))
+                    transpose = list(map(list, zip(*state)))
+                    table = f"\nBlock {block_count}, Decryption Round {10 - i}\n"
+                    table += tabulate([[hex(x) for x in row] for row in transpose], headers=["a0", "a1", "a2", "a3"], tablefmt="fancy_grid")
+                    tables.append(table)
+
                 state = self.add_round_key(state, self.round_keys[i])
                 state = self.mix_columns(state, inv=True)
                 state = self.shift_rows(state, inv=True)
@@ -255,5 +274,11 @@ class AES(object):
             plaintext_blocks.append(
                 self.xor(self.blocks_to_bytes(state), prev))
             prev = block
+
+            for i in range(len(tables[0].splitlines())):
+                for table in tables:
+                    print(table.splitlines()[i], end="\t")
+                print()
+            print()
 
         return self.unpad_msg(b''.join(plaintext_blocks))

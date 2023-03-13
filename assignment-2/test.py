@@ -16,11 +16,11 @@ if __name__ == "__main__":
                 0x3, 0x26, 0x9, 0x52, 0xf6, 0x8b, 0xf4, 0xf])
 
     print("Key:")
-    # print(tabulate([str(hex(i)) for i in key], tablefmt="fancy_grid"))
+    print(tabulate([[hex(i) for i in key]], tablefmt="fancy_grid"))
     print("IV:")
-    print(tabulate([iv], tablefmt="fancy_grid"))
+    print(tabulate([[hex(i) for i in iv]], tablefmt="fancy_grid"))
 
-    plaintext = "hello world!"
+    plaintext = "Hello, world!"
     aes = AES(key)
     ciphertext = aes.encrypt(plaintext.encode(), iv)
     decrypted = aes.decrypt(ciphertext, iv)
