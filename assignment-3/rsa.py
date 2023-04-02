@@ -2,7 +2,7 @@ import hashlib
 import random
 
 
-class RSA():
+class RSA:
     def __init__(self):
         primes = [i for i in range(3, 1000) if self.is_prime(i)]
         p = random.choice(primes)

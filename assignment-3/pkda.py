@@ -19,56 +19,54 @@ class PKDAServicer(pkda_pb2_grpc.PKDAServicer):
 
     def __init__(self):
         self.rsa = RSA()
-        self.private_key = self.rsa.private_key
-        self.public_key = self.rsa.public_key
         self.key_store = {}
-        print(f"[.] Initialised PKDA with public key: {self.public_key}")
+        print(f"[.] Initialised PKDA with public key: {self.rsa.public_key}")
 
     def RegisterClient(self, request, context):
+        print(f"[.] Received registration request from {request.client_id}")
         if request.client_id in self.key_store:
             return pkda_pb2.RegisterClientResponse(
-                pkda_public_key=None,
-                timestamp=int(time.time())
+                pkda_public_key=None, timestamp=int(time.time())
             )
-
         self.key_store[request.client_id] = (
+            request.client_address,
             request.client_public_key,
-            request.client_address
         )
         return pkda_pb2.RegisterClientResponse(
-            pkda_public_key=self.public_key,
-            timestamp=int(time.time())
+            pkda_public_key=json.dumps(self.rsa.public_key), timestamp=int(time.time())
         )
 
     def GetPublicKey(self, request, context):
+        requested_client = (
+            self.key_store[request.client_id]
+            if request.client_id in self.key_store
+            else None
+        )
+        timestamp = int(time.time())
         response = {
-            'client_id': request.client_id,
-            'client_public_key': self.key_store[request.client_id][0] if request.client_id in self.key_store else None,
-            'timestamp': int(time.time()),
+            "client_id": request.client_id,
+            "client_address": requested_client[0] if requested_client else None,
+            "client_public_key": requested_client[1] if requested_client else None,
+            "timestamp": timestamp,
         }
         response_string = json.dumps(response)
         # sign = self.rsa.sign(response_string)
         # response_string = json.dumps([response_string, sign])
         # encrypted_response = self.rsa.encrypt(response_string)
-        return pkda_pb2.EncryptedMessage(
-            encrypted_response=response_string
-        )
+        return pkda_pb2.EncryptedMessage(encrypted_message=response_string)
 
-
-def serve():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("", PORT))
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    server_address = f"[::]:{PORT}"
-    pkda_pb2_grpc.add_PKDAServicer_to_server(
-        PKDAServicer(),
-        server,
-    )
-    server.add_insecure_port(server_address)
-    server.start()
-    print(f"[.] PKDA node started on {server_address}")
-    server.wait_for_termination()
+    def serve(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("", PORT))
+        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        self.address = f"[::]:{PORT}"
+        pkda_pb2_grpc.add_PKDAServicer_to_server(self, self.server)
+        self.server.add_insecure_port(self.address)
+        self.server.start()
+        print(f"[.] PKDA node started on {self.address}")
 
 
 if __name__ == "__main__":
-    serve()
+    pkda = PKDAServicer()
+    pkda.serve()
+    pkda.server.wait_for_termination()
