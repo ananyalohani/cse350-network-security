@@ -1,5 +1,5 @@
 import socket
-from rsa import RSA
+import rsa
 import time
 import json
 from concurrent import futures
@@ -12,15 +12,14 @@ PORT = 56149
 
 
 class PKDAServicer(pkda_pb2_grpc.PKDAServicer):
-    rsa: RSA = None
     private_key: int = None
     public_key: int = None
     key_store: dict = None
 
     def __init__(self):
-        self.rsa = RSA()
+        self.public_key, self.private_key = rsa.generate_key_pair()
         self.key_store = {}
-        print(f"[.] Initialised PKDA with public key: {self.rsa.public_key}")
+        print(f"[.] Initialised PKDA with public key: {self.public_key}")
 
     def RegisterClient(self, request, context):
         print(f"[.] Received registration request from {request.client_id}")
@@ -33,7 +32,7 @@ class PKDAServicer(pkda_pb2_grpc.PKDAServicer):
             request.client_public_key,
         )
         return pkda_pb2.RegisterClientResponse(
-            pkda_public_key=json.dumps(self.rsa.public_key), timestamp=int(time.time())
+            pkda_public_key=json.dumps(self.public_key), timestamp=int(time.time())
         )
 
     def GetPublicKey(self, request, context):
@@ -50,10 +49,9 @@ class PKDAServicer(pkda_pb2_grpc.PKDAServicer):
             "timestamp": timestamp,
         }
         response_string = json.dumps(response)
-        # sign = self.rsa.sign(response_string)
-        # response_string = json.dumps([response_string, sign])
-        # encrypted_response = self.rsa.encrypt(response_string)
-        return pkda_pb2.EncryptedMessage(encrypted_message=response_string)
+        return pkda_pb2.EncryptedMessage(
+            encrypted_message=rsa.encrypt(response_string, self.private_key)
+        )
 
     def serve(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

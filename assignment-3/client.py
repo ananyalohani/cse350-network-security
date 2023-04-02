@@ -1,12 +1,11 @@
 import socket
-import threading
 from concurrent import futures
 import time
 import json
 import sys
 import random
 
-from rsa import RSA
+import rsa
 import pkda
 
 import pkda_pb2
@@ -28,7 +27,7 @@ class ClientServicer(pkda_pb2_grpc.ClientServicer):
 
     def __init__(self, id: str):
         self.id = id
-        self.rsa = RSA()
+        self.public_key, self.private_key = rsa.generate_key_pair()
 
     def generate_nonce(self):
         return random.randint(0, 2**256)
@@ -40,6 +39,7 @@ class ClientServicer(pkda_pb2_grpc.ClientServicer):
                 response = stub.GetPublicKey(
                     pkda_pb2.PublicKeyRequest(client_id=client_id)
                 )
+                response = rsa.decrypt(response.encrypted_message, self.pkda_public_key)
                 response = json.loads(response.encrypted_message)
                 self.keystore[client_id] = (
                     response if response["client_public_key"] is not None else None
@@ -47,10 +47,11 @@ class ClientServicer(pkda_pb2_grpc.ClientServicer):
         return self.keystore[client_id]
 
     def ReceiveMessage(self, request, context):
+        message = rsa.decrypt(request.encrypted_message, self.private_key)
         if not self.is_ready:
             if not self.is_initiator:
                 if not self.my_nonce:
-                    message = json.loads(request.encrypted_message)
+                    message = json.loads(message)
                     self.destination_client_id = message["source"]
                     self.their_nonce = message["nonce"]
                     self.my_nonce = self.generate_nonce()
@@ -64,12 +65,12 @@ class ClientServicer(pkda_pb2_grpc.ClientServicer):
                         ),
                     )
                 else:
-                    received_nonce = int(request.encrypted_message)
+                    received_nonce = int(message)
                     if received_nonce == self.my_nonce:
                         self.is_ready = True
                         print("Connection established!")
             else:
-                message = json.loads(request.encrypted_message)
+                message = json.loads(message)
                 if message["nonce"] == self.my_nonce:
                     self.their_nonce = json.loads(message["message"])["nonce"]
                     self.send_message(self.destination_client_id, str(self.their_nonce))
@@ -78,7 +79,7 @@ class ClientServicer(pkda_pb2_grpc.ClientServicer):
         else:
             if self.is_inputting:
                 sys.stdout.write("\r\033[K")
-            print(f"< {request.encrypted_message}")
+            print(f"< {message}")
             if self.is_inputting:
                 sys.stdout.write("> ")
                 sys.stdout.flush()
@@ -92,11 +93,11 @@ class ClientServicer(pkda_pb2_grpc.ClientServicer):
                 pkda_pb2.RegisterClientRequest(
                     client_id=self.id,
                     client_address=self.address,
-                    client_public_key=json.dumps(self.rsa.public_key),
+                    client_public_key=json.dumps(self.public_key),
                     timestamp=int(time.time()),
                 )
             )
-            self.pkda_public_key = response.pkda_public_key
+            self.pkda_public_key = json.loads(response.pkda_public_key)
 
     def start_chat(self):
         self.is_initiator = input("Are you the initiator? (y/n) ").lower() == "y"
@@ -130,6 +131,7 @@ class ClientServicer(pkda_pb2_grpc.ClientServicer):
             destination["client_public_key"],
             destination["client_address"],
         )
+        message = rsa.encrypt(message, dest_public_key)
         with grpc.insecure_channel(dest_address) as channel:
             stub = pkda_pb2_grpc.ClientStub(channel)
             response = stub.ReceiveMessage(
