@@ -27,7 +27,7 @@ class ClientServicer(pkda_pb2_grpc.ClientServicer):
 
     def __init__(self, id: str):
         self.id = id
-        self.public_key, self.private_key = rsa.generate_key_pair()
+        self.public_key, self.private_key = rsa.generate_key_pair(256)
 
     def generate_nonce(self):
         return random.randint(0, 2**256)
@@ -40,7 +40,7 @@ class ClientServicer(pkda_pb2_grpc.ClientServicer):
                     pkda_pb2.PublicKeyRequest(client_id=client_id)
                 )
                 response = rsa.decrypt(response.encrypted_message, self.pkda_public_key)
-                response = json.loads(response.encrypted_message)
+                response = json.loads(response)
                 self.keystore[client_id] = (
                     response if response["client_public_key"] is not None else None
                 )

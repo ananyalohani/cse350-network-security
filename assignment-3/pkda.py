@@ -17,7 +17,7 @@ class PKDAServicer(pkda_pb2_grpc.PKDAServicer):
     key_store: dict = None
 
     def __init__(self):
-        self.public_key, self.private_key = rsa.generate_key_pair()
+        self.public_key, self.private_key = rsa.generate_key_pair(1024)
         self.key_store = {}
         print(f"[.] Initialised PKDA with public key: {self.public_key}")
 
@@ -29,7 +29,7 @@ class PKDAServicer(pkda_pb2_grpc.PKDAServicer):
             )
         self.key_store[request.client_id] = (
             request.client_address,
-            request.client_public_key,
+            json.loads(request.client_public_key),
         )
         return pkda_pb2.RegisterClientResponse(
             pkda_public_key=json.dumps(self.public_key), timestamp=int(time.time())

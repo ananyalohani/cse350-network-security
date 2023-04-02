@@ -3,6 +3,7 @@ import hashlib
 import math
 import json
 import base64
+from Crypto.Util.number import getPrime
 
 
 def hash(message):
@@ -23,15 +24,15 @@ def is_prime(n):
     return True
 
 
-def generate_key_pair():
+def generate_key_pair(prime_bits):
     primes = []
     for i in range(3, 1000):
         if is_prime(i):
             primes.append(i)
-    p = random.choice(primes)
-    q = random.choice(primes)
+    p = getPrime(prime_bits)
+    q = getPrime(prime_bits)
     while p == q:
-        q = random.choice(primes)
+        q = getPrime(prime_bits)
     n = p * q
     phi_n = (p - 1) * (q - 1)
 
@@ -52,7 +53,7 @@ def encrypt(message, public_key):
     message = message.encode("utf-8")
 
     n, e = public_key
-    block_size = get_block_size(n)
+    block_size = 16
     padded_blocks = []
 
     for i in range(0, len(message), block_size):
@@ -64,36 +65,37 @@ def encrypt(message, public_key):
     for block in padded_blocks:
         int_message = int.from_bytes(block, "big")
         int_ciphertext = pow(int_message, e, n)
-        encrypted_block = int_ciphertext.to_bytes(get_num_bytes(n), "big")
+        encrypted_block = int_ciphertext.to_bytes(get_num_bytes(int_ciphertext), "big")
         encrypted_blocks.append(encrypted_block)
 
-    ciphertext = b"".join(encrypted_blocks)
-    print("e", str(ciphertext))
-    ciphertext = base64.b64encode(ciphertext).decode("ascii")
-    return json.dumps({"hash": hashed, "message": ciphertext})
+    encoded_blocks = list(
+        map(lambda x: base64.b64encode(x).decode("ascii"), encrypted_blocks)
+    )
+
+    return json.dumps(
+        {"hash": hashed, "message": encoded_blocks}, separators=(",", ":")
+    )
 
 
 def decrypt(encrypted, private_key):
     encrypted = json.loads(encrypted)
     hashed = encrypted["hash"]
     ciphertext = encrypted["message"]
-    ciphertext = base64.b64decode(ciphertext)
-    print("d", str(ciphertext))
+    ciphertext = list(map(lambda x: base64.b64decode(x), ciphertext))
 
     n, d = private_key
-    block_size = get_block_size(n)
-    num_blocks = len(ciphertext) // get_num_bytes(n)
 
     decrypted_blocks = []
-    for i in range(num_blocks):
-        block = ciphertext[i * get_num_bytes(n) : (i + 1) * get_num_bytes(n)]
+    for block in ciphertext:
         int_ciphertext = int.from_bytes(block, "big")
         int_message = pow(int_ciphertext, d, n)
-        decrypted_block = int_message.to_bytes(block_size, "big")
+        decrypted_block = int_message.to_bytes(get_num_bytes(int_message), "big")
         decrypted_blocks.append(decrypted_block)
 
-    message = b"".join(decrypted_blocks)
-    message = unpad(message).decode("utf-8")
+    for i in range(len(decrypted_blocks)):
+        decrypted_blocks[i] = unpad(decrypted_blocks[i]).decode("utf-8")
+
+    message = "".join(decrypted_blocks)
 
     if hash(message) != hashed:
         raise Exception("Invalid signature")
@@ -102,23 +104,14 @@ def decrypt(encrypted, private_key):
 
 
 def pad(message, block_size):
-    padding_size = block_size - len(message) % block_size
-    padding = b"\x00" * (padding_size - 1) + b"\x01"
-    padded_message = message + padding
-    return padded_message
+    padding_length = block_size - len(message) % block_size
+    padding = bytes([padding_length] * padding_length)
+    return message + padding
 
 
 def unpad(message):
-    i = len(message) - 1
-    while message[i] == 0:
-        i -= 1
-    if message[i] != 1:
-        raise ValueError("Invalid padding")
-    return message[:i]
-
-
-def get_block_size(n):
-    return (n.bit_length() + 7) // 8
+    padding_length = message[-1]
+    return message[:-padding_length]
 
 
 def get_num_bytes(n):
