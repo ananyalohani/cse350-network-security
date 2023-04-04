@@ -25,14 +25,11 @@ def is_prime(n):
 
 
 def generate_key_pair(prime_bits):
-    primes = []
-    for i in range(3, 1000):
-        if is_prime(i):
-            primes.append(i)
     p = getPrime(prime_bits)
     q = getPrime(prime_bits)
     while p == q:
         q = getPrime(prime_bits)
+
     n = p * q
     phi_n = (p - 1) * (q - 1)
 
@@ -57,7 +54,7 @@ def encrypt(message, public_key):
     padded_blocks = []
 
     for i in range(0, len(message), block_size):
-        block = message[i : i + block_size]
+        block = message[i: i + block_size]
         padded_block = pad(block, block_size)
         padded_blocks.append(padded_block)
 
@@ -65,7 +62,8 @@ def encrypt(message, public_key):
     for block in padded_blocks:
         int_message = int.from_bytes(block, "big")
         int_ciphertext = pow(int_message, e, n)
-        encrypted_block = int_ciphertext.to_bytes(get_num_bytes(int_ciphertext), "big")
+        encrypted_block = int_ciphertext.to_bytes(
+            get_num_bytes(int_ciphertext), "big")
         encrypted_blocks.append(encrypted_block)
 
     encoded_blocks = list(
@@ -89,11 +87,9 @@ def decrypt(encrypted, private_key):
     for block in ciphertext:
         int_ciphertext = int.from_bytes(block, "big")
         int_message = pow(int_ciphertext, d, n)
-        decrypted_block = int_message.to_bytes(get_num_bytes(int_message), "big")
-        decrypted_blocks.append(decrypted_block)
-
-    for i in range(len(decrypted_blocks)):
-        decrypted_blocks[i] = unpad(decrypted_blocks[i]).decode("utf-8")
+        decrypted_block = int_message.to_bytes(
+            get_num_bytes(int_message), "big")
+        decrypted_blocks.append(unpad(decrypted_block).decode("utf-8"))
 
     message = "".join(decrypted_blocks)
 
