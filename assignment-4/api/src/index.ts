@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import cors from 'cors';
 import 'dotenv/config';
 import { decrypt } from './helpers/rsa';
+import { verifyToken } from './middleware/authJWT';
 
 const app = express();
 const PORT = 5000;
@@ -46,6 +47,18 @@ app.post('/login', (req, res) => {
     message: 'Login successful',
     accessToken: token,
   });
+});
+
+app.post('/hidden', verifyToken, (req, res) => {
+  // @ts-ignore
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  // @ts-ignore
+  if (req.user.username !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+  return res.json({ message: 'This is a secret message' });
 });
 
 app.listen(PORT, () => {

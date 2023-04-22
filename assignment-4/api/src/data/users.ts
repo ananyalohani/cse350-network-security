@@ -9,4 +9,12 @@ export const users: User[] = [
     username: 'test',
     password: 'password',
   },
+  {
+    username: 'registrar',
+    password: 'password',
+  },
+  {
+    username: 'director',
+    password: 'password',
+  },
 ];

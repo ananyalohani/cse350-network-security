@@ -22,7 +22,20 @@ export default function Home() {
       }),
     });
     const data = await response.json();
-    console.log(data);
+    localStorage.setItem('token', data.accessToken);
+
+    const res = await fetch('http://localhost:5000/hidden', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `JWT ${data.accessToken}`,
+      },
+      body: JSON.stringify({
+        username: user.username,
+      }),
+    });
+    const d = await res.json();
+    console.log(d);
   };
 
   return (
