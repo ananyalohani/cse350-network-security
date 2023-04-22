@@ -14,7 +14,7 @@ export const verifyToken = (
   ) {
     jwt.verify(
       req.headers.authorization.split(' ')[1],
-      process.env.API_SECRET,
+      process.env.API_SECRET as string,
       function (err, decode) {
         // @ts-ignore
         if (err) req.user = undefined;
