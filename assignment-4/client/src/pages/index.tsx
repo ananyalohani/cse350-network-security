@@ -20,20 +20,17 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
       };
     }
 
-    if (decoded.username === 'user') {
-      return {
-        redirect: {
-          destination: '/transcript',
-          permanent: false,
-        },
-      };
-    } else if (
-      decoded.username === 'registrar' ||
-      decoded.username === 'director'
-    ) {
+    if (decoded.username === 'registrar' || decoded.username === 'director') {
       return {
         redirect: {
           destination: '/sign',
+          permanent: false,
+        },
+      };
+    } else {
+      return {
+        redirect: {
+          destination: '/transcript',
           permanent: false,
         },
       };
@@ -71,13 +68,10 @@ export default function Home() {
         path: '/',
       });
 
-      if (user.username === 'user') {
-        router.push('/transcript');
-      } else if (
-        user.username === 'registrar' ||
-        user.username === 'director'
-      ) {
+      if (user.username === 'registrar' || user.username === 'director') {
         router.push('/sign');
+      } else {
+        router.push('/transcript');
       }
     }
 

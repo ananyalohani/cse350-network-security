@@ -6,7 +6,8 @@ import { users } from './data/users';
 import { decrypt } from './helpers/rsa';
 import { verifyToken } from './middleware/authJWT';
 import { Role } from './types/auth';
-import { generatePdfForStudents } from './helpers/pdf';
+import { generatePdfForStudents } from './helpers/pdf/generate';
+import fs from 'fs';
 
 const app = express();
 const PORT = 5000;
@@ -43,7 +44,7 @@ app.post('/login', (req, res) => {
 
   return res.send({
     user: {
-      username: username,
+      username,
     },
     message: 'Login successful',
     accessToken: token,
@@ -51,9 +52,6 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/hidden', verifyToken, (req: any, res) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
   if (req.user.username !== 'admin') {
     return res.status(403).json({ message: 'Forbidden' });
   }
@@ -69,6 +67,11 @@ app.get('/transcript', verifyToken, (req: any, res) => {
   if (!rollNumber || !name) {
     return res.status(400).json({ message: 'Bad Request' });
   }
+
+  const file = fs.readFileSync(`./files/transcripts/${rollNumber}.pdf`);
+  res.contentType('application/json');
+  const array = new Uint8Array(file);
+  res.json({ file });
 });
 
 app.listen(PORT, async () => {

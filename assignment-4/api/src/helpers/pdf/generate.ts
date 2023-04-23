@@ -1,5 +1,7 @@
-import { Role, User } from '../types/auth';
-import { users } from '../data/users';
+import { Role, User } from '../../types/auth';
+import { users } from '../../data/users';
+
+declare var require: any;
 
 export const generatePdfForStudents = async () => {
   const students = users.filter((user) => user.role === Role.STUDENT);
@@ -18,7 +20,7 @@ const generatePdf = async (user: User) => {
   const document = {
     html: html,
     data: {},
-    path: `src/transcripts/${user.username}.pdf`,
+    path: `files/transcripts/${user.username}.pdf`,
     type: '',
   };
   const res = await pdf.create(document, options);
@@ -79,6 +81,9 @@ const generateTemplate = (user: User) => {
         padding: 5px 3px;
         border: solid 1px #dfdfdf;
       }
+      input {
+        opacity: 0;
+      }
     </style>
     <h1>Transcript</h1>
     <h2>Semester 8: Jan-May 2023</h2>
@@ -116,6 +121,10 @@ const generateTemplate = (user: User) => {
         </tr>
       </tbody>
     </table>
+    <form>
+      <input type="text" name="signature" />
+      <input type="text" name="signature" />
+    </form>
   </body>
 </html>
 `;
