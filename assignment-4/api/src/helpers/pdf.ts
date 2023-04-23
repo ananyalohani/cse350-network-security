@@ -1,5 +1,5 @@
-import { Role, User } from '../../types/auth';
-import { users } from '../../data/users';
+import { Role, User } from '../types/auth';
+import { users } from '../data/users';
 
 declare var require: any;
 

@@ -6,7 +6,8 @@ import { users } from './data/users';
 import { decrypt } from './helpers/rsa';
 import { verifyToken } from './middleware/authJWT';
 import { Role } from './types/auth';
-import { generatePdfForStudents } from './helpers/pdf/generate';
+import { generatePdfForStudents } from './helpers/pdf';
+import { directorSign } from './helpers/sign';
 import fs from 'fs';
 
 const app = express();
@@ -24,6 +25,23 @@ app.use(
 
 app.get('/', (req, res) => {
   return res.json({ message: 'Hello World!' });
+});
+
+app.get('/users', (req, res) => {
+  const usersWithoutPassword = users.map((user) => {
+    const { password, ...rest } = user;
+    return rest;
+  });
+  return res.json({ users: usersWithoutPassword });
+});
+
+app.get('/students', (req, res) => {
+  const students = users.filter((user) => user.role === Role.STUDENT);
+  const studentsWithoutPassword = students.map((student) => {
+    const { password, ...rest } = student;
+    return rest;
+  });
+  return res.json({ students: studentsWithoutPassword });
 });
 
 app.post('/login', (req, res) => {
@@ -72,6 +90,21 @@ app.get('/transcript', verifyToken, (req: any, res) => {
   res.contentType('application/json');
   const array = new Uint8Array(file);
   res.json({ file });
+});
+
+app.post('/sign/director', verifyToken, (req: any, res) => {
+  if (req.user.role !== Role.DIRECTOR) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  const { rollNumber } = req.body;
+  if (!rollNumber) {
+    return res.status(400).json({ message: 'Bad Request' });
+  }
+
+  const filepath = `${rollNumber}.pdf`;
+  const result = directorSign(filepath);
+  res.json({ result });
 });
 
 app.listen(PORT, async () => {
