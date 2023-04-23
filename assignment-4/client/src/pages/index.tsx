@@ -3,11 +3,52 @@ import { FormEventHandler, useEffect, useState } from 'react';
 import { GetServerSideProps } from 'next';
 import { encrypt } from '@/helpers/rsa';
 import { User } from '@/types';
+import nookies, { setCookie } from 'nookies';
+import jwt_decode from 'jwt-decode';
+import { useRouter } from 'next/router';
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const cookies = nookies.get(ctx);
+  if (cookies.token) {
+    const decoded: any = jwt_decode(cookies.token);
+
+    if (decoded.exp * 1000 < Date.now()) {
+      nookies.destroy(ctx, 'token');
+      return {
+        props: {},
+      };
+    }
+
+    if (decoded.username === 'user') {
+      return {
+        redirect: {
+          destination: '/transcript',
+          permanent: false,
+        },
+      };
+    } else if (
+      decoded.username === 'registrar' ||
+      decoded.username === 'director'
+    ) {
+      return {
+        redirect: {
+          destination: '/sign',
+          permanent: false,
+        },
+      };
+    }
+  }
+
+  return {
+    props: {},
+  };
+};
 
 const inter = Inter({ subsets: ['latin'] });
 
 export default function Home() {
   const [user, setUser] = useState<User>({ username: '', password: '' });
+  const router = useRouter();
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
@@ -22,7 +63,22 @@ export default function Home() {
       }),
     });
     const data = await response.json();
-    localStorage.setItem('token', data.accessToken);
+
+    if (data.accessToken) {
+      setCookie(null, 'token', data.accessToken, {
+        maxAge: 30 * 24 * 60 * 60,
+        path: '/',
+      });
+
+      if (user.username === 'user') {
+        router.push('/transcript');
+      } else if (
+        user.username === 'registrar' ||
+        user.username === 'director'
+      ) {
+        router.push('/sign');
+      }
+    }
 
     const res = await fetch('http://localhost:5000/hidden', {
       method: 'POST',

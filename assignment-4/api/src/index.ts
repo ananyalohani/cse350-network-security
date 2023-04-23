@@ -49,12 +49,10 @@ app.post('/login', (req, res) => {
   });
 });
 
-app.post('/hidden', verifyToken, (req, res) => {
-  // @ts-ignore
+app.post('/hidden', verifyToken, (req: any, res) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
-  // @ts-ignore
   if (req.user.username !== 'admin') {
     return res.status(403).json({ message: 'Forbidden' });
   }

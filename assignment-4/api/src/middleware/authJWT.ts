@@ -2,11 +2,7 @@ import jwt from 'jsonwebtoken';
 import { users } from '../data/users';
 import { NextFunction, Request, Response } from 'express';
 
-export const verifyToken = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const verifyToken = (req: any, res: Response, next: NextFunction) => {
   if (
     req.headers &&
     req.headers.authorization &&
@@ -15,17 +11,14 @@ export const verifyToken = (
     jwt.verify(
       req.headers.authorization.split(' ')[1],
       process.env.API_SECRET as string,
-      function (err, decode) {
-        // @ts-ignore
+      function (err: any, decoded: any) {
         if (err) req.user = undefined;
-        const user = users.find((user) => user.username === req.body.username);
-        // @ts-ignore
+        const user = users.find((user) => user.username === decoded.username);
         req.user = user;
         next();
       }
     );
   } else {
-    // @ts-ignore
     req.user = undefined;
     next();
   }
