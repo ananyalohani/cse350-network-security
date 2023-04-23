@@ -1,10 +1,12 @@
-import express from 'express';
-import { users } from './data/users';
-import jwt from 'jsonwebtoken';
 import cors from 'cors';
 import 'dotenv/config';
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import { users } from './data/users';
 import { decrypt } from './helpers/rsa';
 import { verifyToken } from './middleware/authJWT';
+import { Role } from './types/auth';
+import { generatePdfForStudents } from './helpers/pdf';
 
 const app = express();
 const PORT = 5000;
@@ -42,7 +44,6 @@ app.post('/login', (req, res) => {
   return res.send({
     user: {
       username: username,
-      role: username,
     },
     message: 'Login successful',
     accessToken: token,
@@ -59,6 +60,18 @@ app.post('/hidden', verifyToken, (req: any, res) => {
   return res.json({ message: 'This is a secret message' });
 });
 
-app.listen(PORT, () => {
+app.get('/transcript', verifyToken, (req: any, res) => {
+  if (req.user.role !== Role.STUDENT) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  const { rollNumber, name } = req.query;
+  if (!rollNumber || !name) {
+    return res.status(400).json({ message: 'Bad Request' });
+  }
+});
+
+app.listen(PORT, async () => {
   console.log(`Example app listening at http://localhost:${PORT}`);
+  await generatePdfForStudents();
 });

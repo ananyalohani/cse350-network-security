@@ -1,11 +1,12 @@
-import { Inter } from 'next/font/google';
-import { FormEventHandler, useEffect, useState } from 'react';
-import { GetServerSideProps } from 'next';
 import { encrypt } from '@/helpers/rsa';
 import { User } from '@/types';
-import nookies, { setCookie } from 'nookies';
+
 import jwt_decode from 'jwt-decode';
+import { GetServerSideProps } from 'next';
+import { Inter } from 'next/font/google';
 import { useRouter } from 'next/router';
+import nookies, { setCookie } from 'nookies';
+import { FormEventHandler, useState } from 'react';
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const cookies = nookies.get(ctx);

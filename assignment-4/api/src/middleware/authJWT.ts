@@ -1,6 +1,6 @@
+import { NextFunction, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { users } from '../data/users';
-import { NextFunction, Request, Response } from 'express';
 
 export const verifyToken = (req: any, res: Response, next: NextFunction) => {
   if (
