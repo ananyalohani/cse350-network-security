@@ -1,10 +1,10 @@
-import path from 'path';
 import fs from 'fs';
 import {
-  plainAddPlaceholder,
   extractSignature,
+  plainAddPlaceholder,
   // @ts-ignore
 } from 'node-signpdf/dist/helpers';
+import path from 'path';
 // @ts-ignore
 import signer from 'node-signpdf/dist/signpdf';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
@@ -25,17 +25,13 @@ export const directorSign = async (filepath: string) => {
     signatureLength: 4096,
   });
   pdfBuffer = signer.sign(pdfBuffer, p12Buffer);
+  const timestamp = new Date();
   const { signature, signedData } = extractSignature(pdfBuffer);
   fs.writeFileSync(
     path.resolve(__dirname, '../../files/transcripts/' + filepath),
     pdfBuffer
   );
-  // await addWatermark(
-  //   filepath,
-  //   `Signed by Director IIITD on ${new Date().toDateString()}`,
-  //   'bottom-left'
-  // );
-  return { signature, signedData, pdfBuffer };
+  return { timestamp, signature, signedData };
 };
 
 export const registrarSign = async (filepath: string) => {
@@ -54,17 +50,13 @@ export const registrarSign = async (filepath: string) => {
     signatureLength: 4096,
   });
   pdfBuffer = signer.sign(pdfBuffer, p12Buffer);
+  const timestamp = new Date();
   const { signature, signedData } = extractSignature(pdfBuffer);
   fs.writeFileSync(
     path.resolve(__dirname, '../../files/transcripts/' + filepath),
     pdfBuffer
   );
-  // await addWatermark(
-  //   filepath,
-  //   `Signed by Registrar IIITD on ${new Date().toDateString()}`,
-  //   'bottom-right'
-  // );
-  return { signature, signedData, pdfBuffer };
+  return { timestamp, signature, signedData };
 };
 
 export const addWatermark = async (
@@ -79,7 +71,7 @@ export const addWatermark = async (
   const pages = pdfDoc.getPages();
   const firstPage = pages[0];
   const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const x = position === 'bottom-right' ? 350 : 20;
+  const x = position === 'bottom-right' ? 320 : 20;
   const y = 20;
   firstPage.drawText(watermark, {
     x,

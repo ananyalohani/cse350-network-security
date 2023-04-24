@@ -1,14 +1,15 @@
 import cors from 'cors';
 import 'dotenv/config';
 import express from 'express';
+import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import { users } from './data/users';
+import { generatePdfForStudents } from './helpers/pdf';
 import { decrypt } from './helpers/rsa';
+import { addWatermark, directorSign, registrarSign } from './helpers/sign';
 import { verifyToken } from './middleware/authJWT';
 import { Role } from './types/auth';
-import { generatePdfForStudents } from './helpers/pdf';
-import { addWatermark, directorSign, registrarSign } from './helpers/sign';
-import fs from 'fs';
+import { format } from 'date-fns';
 
 const app = express();
 const PORT = 5000;
@@ -73,16 +74,16 @@ app.listen(PORT, async () => {
   const students = users.filter((user) => user.role === Role.STUDENT);
   students.forEach(async (student) => {
     const { username: rollNumber } = student;
-    await directorSign(`${rollNumber}.pdf`);
-    await registrarSign(`${rollNumber}.pdf`);
+    const { timestamp: dTime } = await directorSign(`${rollNumber}.pdf`);
+    const { timestamp: rTime } = await registrarSign(`${rollNumber}.pdf`);
     await addWatermark(
       `${rollNumber}.pdf`,
-      `Signed by Director IIITD on ${new Date().toDateString()}`,
+      `Signed by Director IIITD on ${format(dTime, 'dd/MM/yyyy H:mm:ss')}`,
       'bottom-left'
     );
     await addWatermark(
       `${rollNumber}.pdf`,
-      `Signed by Registrar IIITD on ${new Date().toDateString()}`,
+      `Signed by Registrar IIITD on ${format(rTime, 'dd/MM/yyyy H:mm:ss')}`,
       'bottom-right'
     );
   });
