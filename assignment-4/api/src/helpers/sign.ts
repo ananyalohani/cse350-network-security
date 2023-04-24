@@ -8,13 +8,14 @@ import path from 'path';
 // @ts-ignore
 import signer from 'node-signpdf/dist/signpdf';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
+import { DocType } from '../types/auth';
 
-export const directorSign = async (filepath: string) => {
+export const directorSign = async (filepath: string, type: DocType) => {
   const p12Buffer = fs.readFileSync(
-    path.resolve(__dirname, '../../keys/director.p12')
+    path.resolve(__dirname, '../../keys/director/director.p12')
   );
   let pdfBuffer = fs.readFileSync(
-    path.resolve(__dirname, '../../files/transcripts/' + filepath)
+    path.resolve(__dirname, `../../files/${type}s/${filepath}`)
   );
   pdfBuffer = plainAddPlaceholder({
     pdfBuffer,
@@ -28,18 +29,18 @@ export const directorSign = async (filepath: string) => {
   const timestamp = new Date();
   const { signature, signedData } = extractSignature(pdfBuffer);
   fs.writeFileSync(
-    path.resolve(__dirname, '../../files/transcripts/' + filepath),
+    path.resolve(__dirname, `../../files/${type}s/${filepath}`),
     pdfBuffer
   );
   return { timestamp, signature, signedData };
 };
 
-export const registrarSign = async (filepath: string) => {
+export const registrarSign = async (filepath: string, type: DocType) => {
   const p12Buffer = fs.readFileSync(
-    path.resolve(__dirname, '../../keys/registrar.p12')
+    path.resolve(__dirname, '../../keys/registrar/registrar.p12')
   );
   let pdfBuffer = fs.readFileSync(
-    path.resolve(__dirname, '../../files/transcripts/' + filepath)
+    path.resolve(__dirname, `../../files/${type}s/${filepath}`)
   );
   pdfBuffer = plainAddPlaceholder({
     pdfBuffer,
@@ -53,7 +54,7 @@ export const registrarSign = async (filepath: string) => {
   const timestamp = new Date();
   const { signature, signedData } = extractSignature(pdfBuffer);
   fs.writeFileSync(
-    path.resolve(__dirname, '../../files/transcripts/' + filepath),
+    path.resolve(__dirname, `../../files/${type}s/${filepath}`),
     pdfBuffer
   );
   return { timestamp, signature, signedData };
@@ -61,11 +62,12 @@ export const registrarSign = async (filepath: string) => {
 
 export const addWatermark = async (
   filepath: string,
+  type: DocType,
   watermark: string,
   position: 'bottom-left' | 'bottom-right'
 ) => {
   const pdfBuffer = fs.readFileSync(
-    path.resolve(__dirname, '../../files/transcripts/' + filepath)
+    path.resolve(__dirname, `../../files/${type}s/${filepath}`)
   );
   const pdfDoc = await PDFDocument.load(pdfBuffer);
   const pages = pdfDoc.getPages();
@@ -81,7 +83,7 @@ export const addWatermark = async (
   });
   const pdfBytes = await pdfDoc.save();
   fs.writeFileSync(
-    path.resolve(__dirname, '../../files/transcripts/' + filepath),
+    path.resolve(__dirname, `../../files/${type}s/${filepath}`),
     pdfBytes
   );
   return pdfBytes;

@@ -8,7 +8,7 @@ import { generatePdfForStudents } from './helpers/pdf';
 import { decrypt } from './helpers/rsa';
 import { addWatermark, directorSign, registrarSign } from './helpers/sign';
 import { verifyToken } from './middleware/authJWT';
-import { Role } from './types/auth';
+import { DocType, Role } from './types/auth';
 import { format } from 'date-fns';
 
 const app = express();
@@ -68,23 +68,43 @@ app.get('/transcript', verifyToken, (req: any, res) => {
   res.json({ file });
 });
 
+app.get('/certificate', verifyToken, (req: any, res) => {
+  if (req.user.role !== Role.STUDENT) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  const { rollNumber, name } = req.query;
+  if (!rollNumber || !name) {
+    return res.status(400).json({ message: 'Bad Request' });
+  }
+
+  const file = fs.readFileSync(`./files/certificates/${rollNumber}.pdf`);
+  res.contentType('application/json');
+  res.json({ file });
+});
+
 app.listen(PORT, async () => {
   console.log(`Example app listening at http://localhost:${PORT}`);
   await generatePdfForStudents();
   const students = users.filter((user) => user.role === Role.STUDENT);
-  students.forEach(async (student) => {
+  students.forEach((student) => {
     const { username: rollNumber } = student;
-    const { timestamp: dTime } = await directorSign(`${rollNumber}.pdf`);
-    const { timestamp: rTime } = await registrarSign(`${rollNumber}.pdf`);
-    await addWatermark(
-      `${rollNumber}.pdf`,
-      `Signed by Director IIITD on ${format(dTime, 'dd/MM/yyyy H:mm:ss')}`,
-      'bottom-left'
-    );
-    await addWatermark(
-      `${rollNumber}.pdf`,
-      `Signed by Registrar IIITD on ${format(rTime, 'dd/MM/yyyy H:mm:ss')}`,
-      'bottom-right'
-    );
+    (['transcript', 'certificate'] as DocType[]).forEach(async (type) => {
+      const filename = `${rollNumber}.pdf`;
+      const { timestamp: dTime } = await directorSign(filename, type);
+      const { timestamp: rTime } = await registrarSign(filename, type);
+      await addWatermark(
+        filename,
+        type,
+        `Signed by Director IIITD on ${format(dTime, 'dd/MM/yyyy H:mm:ss')}`,
+        'bottom-left'
+      );
+      await addWatermark(
+        filename,
+        type,
+        `Signed by Registrar IIITD on ${format(rTime, 'dd/MM/yyyy H:mm:ss')}`,
+        'bottom-right'
+      );
+    });
   });
 });

@@ -15,3 +15,5 @@ export interface LoginRequest {
   username: string;
   encryptedPassword: string;
 }
+
+export type DocType = 'transcript' | 'certificate';
