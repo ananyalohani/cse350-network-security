@@ -41,7 +41,6 @@ export const directorSign = async (
   pdfBuffer = signer.sign(pdfBuffer, p12Buffer, {
     passphrase: process.env.DIRECTOR_PASSPHRASE,
   });
-  // const timestamp = new Date();
   const { signature, signedData } = extractSignature(pdfBuffer);
   fs.writeFileSync(
     path.resolve(__dirname, `../../files/${type}s/${filepath}`),
