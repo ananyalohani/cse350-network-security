@@ -7,8 +7,9 @@ import {
 } from 'node-signpdf/dist/helpers';
 // @ts-ignore
 import signer from 'node-signpdf/dist/signpdf';
+import { PDFDocument, StandardFonts } from 'pdf-lib';
 
-export const directorSign = (filepath: string) => {
+export const directorSign = async (filepath: string) => {
   const p12Buffer = fs.readFileSync(
     path.resolve(__dirname, '../../keys/director.p12')
   );
@@ -17,7 +18,7 @@ export const directorSign = (filepath: string) => {
   );
   pdfBuffer = plainAddPlaceholder({
     pdfBuffer,
-    reason: 'I am the director',
+    reason: 'Verified by the director',
     location: 'IIIT Delhi',
     name: 'Director',
     contactInfo: 'director@iiitd.ac.in',
@@ -29,10 +30,15 @@ export const directorSign = (filepath: string) => {
     path.resolve(__dirname, '../../files/transcripts/' + filepath),
     pdfBuffer
   );
+  // await addWatermark(
+  //   filepath,
+  //   `Signed by Director IIITD on ${new Date().toDateString()}`,
+  //   'bottom-left'
+  // );
   return { signature, signedData, pdfBuffer };
 };
 
-export const registrarSign = (filepath: string) => {
+export const registrarSign = async (filepath: string) => {
   const p12Buffer = fs.readFileSync(
     path.resolve(__dirname, '../../keys/registrar.p12')
   );
@@ -41,7 +47,7 @@ export const registrarSign = (filepath: string) => {
   );
   pdfBuffer = plainAddPlaceholder({
     pdfBuffer,
-    reason: 'I am the registrar',
+    reason: 'Verified by the registrar',
     location: 'IIIT Delhi',
     name: 'Registrar',
     contactInfo: 'registrar@iiitd.ac.in',
@@ -53,5 +59,38 @@ export const registrarSign = (filepath: string) => {
     path.resolve(__dirname, '../../files/transcripts/' + filepath),
     pdfBuffer
   );
+  // await addWatermark(
+  //   filepath,
+  //   `Signed by Registrar IIITD on ${new Date().toDateString()}`,
+  //   'bottom-right'
+  // );
   return { signature, signedData, pdfBuffer };
+};
+
+export const addWatermark = async (
+  filepath: string,
+  watermark: string,
+  position: 'bottom-left' | 'bottom-right'
+) => {
+  const pdfBuffer = fs.readFileSync(
+    path.resolve(__dirname, '../../files/transcripts/' + filepath)
+  );
+  const pdfDoc = await PDFDocument.load(pdfBuffer);
+  const pages = pdfDoc.getPages();
+  const firstPage = pages[0];
+  const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const x = position === 'bottom-right' ? 350 : 20;
+  const y = 20;
+  firstPage.drawText(watermark, {
+    x,
+    y,
+    size: 12,
+    font: helveticaFont,
+  });
+  const pdfBytes = await pdfDoc.save();
+  fs.writeFileSync(
+    path.resolve(__dirname, '../../files/transcripts/' + filepath),
+    pdfBytes
+  );
+  return pdfBytes;
 };

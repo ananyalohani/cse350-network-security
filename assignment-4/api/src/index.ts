@@ -7,7 +7,7 @@ import { decrypt } from './helpers/rsa';
 import { verifyToken } from './middleware/authJWT';
 import { Role } from './types/auth';
 import { generatePdfForStudents } from './helpers/pdf';
-import { directorSign } from './helpers/sign';
+import { addWatermark, directorSign, registrarSign } from './helpers/sign';
 import fs from 'fs';
 
 const app = express();
@@ -25,23 +25,6 @@ app.use(
 
 app.get('/', (req, res) => {
   return res.json({ message: 'Hello World!' });
-});
-
-app.get('/users', (req, res) => {
-  const usersWithoutPassword = users.map((user) => {
-    const { password, ...rest } = user;
-    return rest;
-  });
-  return res.json({ users: usersWithoutPassword });
-});
-
-app.get('/students', (req, res) => {
-  const students = users.filter((user) => user.role === Role.STUDENT);
-  const studentsWithoutPassword = students.map((student) => {
-    const { password, ...rest } = student;
-    return rest;
-  });
-  return res.json({ students: studentsWithoutPassword });
 });
 
 app.post('/login', (req, res) => {
@@ -69,13 +52,6 @@ app.post('/login', (req, res) => {
   });
 });
 
-app.post('/hidden', verifyToken, (req: any, res) => {
-  if (req.user.username !== 'admin') {
-    return res.status(403).json({ message: 'Forbidden' });
-  }
-  return res.json({ message: 'This is a secret message' });
-});
-
 app.get('/transcript', verifyToken, (req: any, res) => {
   if (req.user.role !== Role.STUDENT) {
     return res.status(403).json({ message: 'Forbidden' });
@@ -88,26 +64,26 @@ app.get('/transcript', verifyToken, (req: any, res) => {
 
   const file = fs.readFileSync(`./files/transcripts/${rollNumber}.pdf`);
   res.contentType('application/json');
-  const array = new Uint8Array(file);
   res.json({ file });
-});
-
-app.post('/sign/director', verifyToken, (req: any, res) => {
-  if (req.user.role !== Role.DIRECTOR) {
-    return res.status(403).json({ message: 'Forbidden' });
-  }
-
-  const { rollNumber } = req.body;
-  if (!rollNumber) {
-    return res.status(400).json({ message: 'Bad Request' });
-  }
-
-  const filepath = `${rollNumber}.pdf`;
-  const result = directorSign(filepath);
-  res.json({ result });
 });
 
 app.listen(PORT, async () => {
   console.log(`Example app listening at http://localhost:${PORT}`);
   await generatePdfForStudents();
+  const students = users.filter((user) => user.role === Role.STUDENT);
+  students.forEach(async (student) => {
+    const { username: rollNumber } = student;
+    await directorSign(`${rollNumber}.pdf`);
+    await registrarSign(`${rollNumber}.pdf`);
+    await addWatermark(
+      `${rollNumber}.pdf`,
+      `Signed by Director IIITD on ${new Date().toDateString()}`,
+      'bottom-left'
+    );
+    await addWatermark(
+      `${rollNumber}.pdf`,
+      `Signed by Registrar IIITD on ${new Date().toDateString()}`,
+      'bottom-right'
+    );
+  });
 });
