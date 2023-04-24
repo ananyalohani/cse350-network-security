@@ -1,6 +1,8 @@
+import { format } from 'date-fns';
 import { User } from '../types/auth';
 
-export const generateCertificateTemplate = (user: User) => {
+export const generateCertificateTemplate = (user: User, timestamp: Date) => {
+  const datetime = format(timestamp, 'dd/MM/yyyy HH:mm:ss');
   return `<!DOCTYPE html>
 <html>
   <head>
@@ -10,6 +12,7 @@ export const generateCertificateTemplate = (user: User) => {
   <body>
     <style>
       body {
+        font-size: 12px;
         font-family: sans-serif;
         padding: 80px 60px;
       }
@@ -57,10 +60,26 @@ export const generateCertificateTemplate = (user: User) => {
       input {
         opacity: 0;
       }
+      div.sign {
+        margin-top: 100px;
+        color: rgb(204, 0, 0);
+        width: 100%;
+      }
+      p.sign1 {
+        font-weight: normal;
+      }
+      p.sign2 {
+        margin-top: 100px;
+        font-weight: normal;
+      }
+      div.details {
+        margin-top: 20px;
+        margin-bottom: 30px;
+      }
     </style>
     <h1>Degree Certificate</h1>
     <h2>2019-2023 Session</h2>
-    <div>
+    <div class="details">
       <p><span>Name: </span>${user.name}</p>
       <p><span>Roll Number: </span>${user.username}</p>
     </div>
@@ -70,12 +89,17 @@ export const generateCertificateTemplate = (user: User) => {
       Indraprastha Institute of Information Technology, Delhi with a Bachelor of
       Technology degree in the field of Computer Science and Engineering.
     </p>
+    <div class="sign">
+      <p class="sign1">Signed by Director IIITD on ${datetime}</p>
+      <p class="sign2">Signed by Registrar IIITD on ${datetime}</p>
+    </div>
   </body>
 </html>
 `;
 };
 
-export const generateTranscriptTemplate = (user: User) => {
+export const generateTranscriptTemplate = (user: User, timestamp: Date) => {
+  const datetime = format(timestamp, 'dd/MM/yyyy HH:mm:ss');
   return `<!DOCTYPE html>
 <html>
   <head>
@@ -85,6 +109,7 @@ export const generateTranscriptTemplate = (user: User) => {
   <body>
     <style>
       body {
+        font-size: 12px;
         font-family: sans-serif;
         padding: 80px 60px;
       }
@@ -132,10 +157,26 @@ export const generateTranscriptTemplate = (user: User) => {
       input {
         opacity: 0;
       }
+      div.sign {
+        margin-top: 100px;
+        color: rgb(204, 0, 0);
+        width: 100%;
+      }
+      p.sign1 {
+        font-weight: normal;
+      }
+      p.sign2 {
+        margin-top: 100px;
+        font-weight: normal;
+      }
+      div.details {
+        margin-top: 20px;
+        margin-bottom: 30px;
+      }
     </style>
     <h1>Transcript</h1>
     <h2>Semester 8: Jan-May 2023</h2>
-    <div>
+    <div class="details">
       <p><span>Name: </span>${user.name}</p>
       <p><span>Roll Number: </span>${user.username}</p>
     </div>
@@ -185,10 +226,10 @@ export const generateTranscriptTemplate = (user: User) => {
         </tr>
       </tbody>
     </table>
-    <form>
-      <input type="text" name="signature" />
-      <input type="text" name="signature" />
-    </form>
+    <div class="sign">
+      <p class="sign1">Signed by Director IIITD on ${datetime}</p>
+      <p class="sign2">Signed by Registrar IIITD on ${datetime}</p>
+    </div>
   </body>
 </html>
 `;

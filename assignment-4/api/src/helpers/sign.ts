@@ -10,7 +10,11 @@ import signer from 'node-signpdf/dist/signpdf';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { DocType } from '../types/auth';
 
-export const directorSign = async (filepath: string, type: DocType) => {
+export const directorSign = async (
+  filepath: string,
+  type: DocType,
+  timestamp: Date
+) => {
   const p12Buffer = fs.readFileSync(
     path.resolve(__dirname, '../../keys/director/director.p12')
   );
@@ -20,22 +24,26 @@ export const directorSign = async (filepath: string, type: DocType) => {
   pdfBuffer = plainAddPlaceholder({
     pdfBuffer,
     reason: 'Verified by the director',
-    location: 'IIIT Delhi',
+    location: `IIIT Delhi ${timestamp}`,
     name: 'Director',
     contactInfo: 'director@iiitd.ac.in',
     signatureLength: 4096,
   });
   pdfBuffer = signer.sign(pdfBuffer, p12Buffer);
-  const timestamp = new Date();
+  // const timestamp = new Date();
   const { signature, signedData } = extractSignature(pdfBuffer);
   fs.writeFileSync(
     path.resolve(__dirname, `../../files/${type}s/${filepath}`),
     pdfBuffer
   );
-  return { timestamp, signature, signedData };
+  return { signature, signedData };
 };
 
-export const registrarSign = async (filepath: string, type: DocType) => {
+export const registrarSign = async (
+  filepath: string,
+  type: DocType,
+  timestamp: Date
+) => {
   const p12Buffer = fs.readFileSync(
     path.resolve(__dirname, '../../keys/registrar/registrar.p12')
   );
@@ -45,19 +53,19 @@ export const registrarSign = async (filepath: string, type: DocType) => {
   pdfBuffer = plainAddPlaceholder({
     pdfBuffer,
     reason: 'Verified by the registrar',
-    location: 'IIIT Delhi',
+    location: `IIIT Delhi ${timestamp}`,
     name: 'Registrar',
     contactInfo: 'registrar@iiitd.ac.in',
     signatureLength: 4096,
   });
   pdfBuffer = signer.sign(pdfBuffer, p12Buffer);
-  const timestamp = new Date();
+  // const timestamp = new Date();
   const { signature, signedData } = extractSignature(pdfBuffer);
   fs.writeFileSync(
     path.resolve(__dirname, `../../files/${type}s/${filepath}`),
     pdfBuffer
   );
-  return { timestamp, signature, signedData };
+  return { signature, signedData };
 };
 
 export const addWatermark = async (

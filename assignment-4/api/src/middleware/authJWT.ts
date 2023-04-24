@@ -15,7 +15,7 @@ export const verifyToken = (req: any, res: Response, next: NextFunction) => {
         if (err) req.user = undefined;
         const username = decoded?.hasOwnProperty('username')
           ? decoded?.username
-          : req.body.username || req.query.username;
+          : req.body.username || req.query.username || req.query.rollNumber;
         const user = users.find((user) => user.username === username);
         if (!user) {
           return res.status(401).json({ message: 'Unauthorized' });

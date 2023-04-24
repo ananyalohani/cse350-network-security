@@ -37,6 +37,9 @@ export default function Transcript({}: Props) {
       .then((response) => response.json())
       .then((data) => {
         console.log({ data });
+        const signedData = data.signedData;
+        const signature = data.signature;
+        console.log(Buffer.from(signedData).toString('base64'));
         setTimeout(() => setBuffer(new Uint8Array(data.file.data)), 1000);
       });
   };
@@ -49,24 +52,24 @@ export default function Transcript({}: Props) {
       {buffer ? (
         <PDFViewer buffer={buffer} />
       ) : (
-        <form className='flex flex-col space-y-2 mt-8' onSubmit={handleSubmit}>
+        <form className='flex flex-col mt-8 space-y-2' onSubmit={handleSubmit}>
           <input
             type='text'
             placeholder='Name'
-            className='border border-gray-200 rounded py-1 px-2'
+            className='px-2 py-1 border border-gray-200 rounded'
             onChange={(e) => setStudent({ ...student, name: e.target.value })}
           />
           <input
             type='text'
             placeholder='Roll Number'
-            className='border border-gray-200 rounded py-1 px-2'
+            className='px-2 py-1 border border-gray-200 rounded'
             onChange={(e) =>
               setStudent({ ...student, rollNumber: e.target.value })
             }
           />
           <button
             type='submit'
-            className='bg-blue-500 rounded py-1 px-2 text-white'
+            className='px-2 py-1 text-white bg-blue-500 rounded'
           >
             Request Transcript
           </button>

@@ -9,6 +9,10 @@ import { decrypt } from './helpers/rsa';
 import { addWatermark, directorSign, registrarSign } from './helpers/sign';
 import { verifyToken } from './middleware/authJWT';
 import { DocType, Role } from './types/auth';
+import {
+  extractSignature,
+  // @ts-ignore
+} from 'node-signpdf/dist/helpers';
 import { format } from 'date-fns';
 
 const app = express();
@@ -64,8 +68,9 @@ app.get('/transcript', verifyToken, (req: any, res) => {
   }
 
   const file = fs.readFileSync(`./files/transcripts/${rollNumber}.pdf`);
+  const { signature, signedData } = extractSignature(file);
   res.contentType('application/json');
-  res.json({ file });
+  res.json({ file, signature, signedData });
 });
 
 app.get('/certificate', verifyToken, (req: any, res) => {
@@ -79,32 +84,22 @@ app.get('/certificate', verifyToken, (req: any, res) => {
   }
 
   const file = fs.readFileSync(`./files/certificates/${rollNumber}.pdf`);
+  const { signature, signedData } = extractSignature(file);
   res.contentType('application/json');
-  res.json({ file });
+  res.json({ file, signature, signedData });
 });
 
 app.listen(PORT, async () => {
   console.log(`Example app listening at http://localhost:${PORT}`);
-  await generatePdfForStudents();
+  const timestamp = new Date();
+  await generatePdfForStudents(timestamp);
   const students = users.filter((user) => user.role === Role.STUDENT);
   students.forEach((student) => {
     const { username: rollNumber } = student;
     (['transcript', 'certificate'] as DocType[]).forEach(async (type) => {
       const filename = `${rollNumber}.pdf`;
-      const { timestamp: dTime } = await directorSign(filename, type);
-      const { timestamp: rTime } = await registrarSign(filename, type);
-      await addWatermark(
-        filename,
-        type,
-        `Signed by Director IIITD on ${format(dTime, 'dd/MM/yyyy H:mm:ss')}`,
-        'bottom-left'
-      );
-      await addWatermark(
-        filename,
-        type,
-        `Signed by Registrar IIITD on ${format(rTime, 'dd/MM/yyyy H:mm:ss')}`,
-        'bottom-right'
-      );
+      await directorSign(filename, type, timestamp);
+      await registrarSign(filename, type, timestamp);
     });
   });
 });

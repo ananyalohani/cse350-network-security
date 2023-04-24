@@ -7,24 +7,24 @@ import { users } from '../data/users';
 
 declare var require: any;
 
-export const generatePdfForStudents = async () => {
+export const generatePdfForStudents = async (timestamp: Date) => {
   const students = users.filter((user) => user.role === Role.STUDENT);
   const transcriptPromises = students.map((student) =>
-    generateTranscript(student)
+    generateTranscript(student, timestamp)
   );
   const certificatePromises = students.map((student) =>
-    generateCertificate(student)
+    generateCertificate(student, timestamp)
   );
   await Promise.all([...transcriptPromises, ...certificatePromises]);
 };
 
-const generateTranscript = async (user: User) => {
+const generateTranscript = async (user: User, timestamp: Date) => {
   const pdf = require('pdf-creator-node');
-  const html = generateTranscriptTemplate(user);
+  const html = generateTranscriptTemplate(user, timestamp);
   const options = {
     format: 'A4',
     orientation: 'portrait',
-    border: '10mm',
+    // border: '10mm',
   };
   const document = {
     html: html,
@@ -36,13 +36,13 @@ const generateTranscript = async (user: User) => {
   return res;
 };
 
-const generateCertificate = async (user: User) => {
+const generateCertificate = async (user: User, timestamp: Date) => {
   const pdf = require('pdf-creator-node');
-  const html = generateCertificateTemplate(user);
+  const html = generateCertificateTemplate(user, timestamp);
   const options = {
     format: 'A4',
     orientation: 'portrait',
-    border: '10mm',
+    // border: '10mm',
   };
   const document = {
     html: html,
