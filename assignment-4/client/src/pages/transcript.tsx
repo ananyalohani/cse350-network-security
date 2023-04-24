@@ -37,9 +37,6 @@ export default function Transcript({}: Props) {
       .then((response) => response.json())
       .then((data) => {
         console.log({ data });
-        const signedData = data.signedData;
-        const signature = data.signature;
-        console.log(Buffer.from(signedData).toString('base64'));
         setTimeout(() => setBuffer(new Uint8Array(data.file.data)), 1000);
       });
   };

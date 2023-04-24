@@ -3,17 +3,16 @@ import 'dotenv/config';
 import express from 'express';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
-import { users } from './data/users';
-import { generatePdfForStudents } from './helpers/pdf';
-import { decrypt } from './helpers/rsa';
-import { addWatermark, directorSign, registrarSign } from './helpers/sign';
-import { verifyToken } from './middleware/authJWT';
-import { DocType, Role } from './types/auth';
 import {
   extractSignature,
   // @ts-ignore
 } from 'node-signpdf/dist/helpers';
-import { format } from 'date-fns';
+import { users } from './data/users';
+import { generatePdfForStudents } from './helpers/pdf';
+import { decrypt } from './helpers/rsa';
+import { directorSign, registrarSign } from './helpers/sign';
+import { verifyToken } from './middleware/authJWT';
+import { DocType, Role } from './types/auth';
 
 const app = express();
 const PORT = 5000;

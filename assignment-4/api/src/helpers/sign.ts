@@ -9,6 +9,7 @@ import path from 'path';
 import signer from 'node-signpdf/dist/signpdf';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { DocType } from '../types/auth';
+import 'dotenv/config';
 
 export const directorSign = async (
   filepath: string,
@@ -29,7 +30,17 @@ export const directorSign = async (
     contactInfo: 'director@iiitd.ac.in',
     signatureLength: 4096,
   });
-  pdfBuffer = signer.sign(pdfBuffer, p12Buffer);
+  pdfBuffer = plainAddPlaceholder({
+    pdfBuffer,
+    reason: 'Verified by the registrar',
+    location: `IIIT Delhi ${timestamp}`,
+    name: 'Registrar',
+    contactInfo: 'registrar@iiitd.ac.in',
+    signatureLength: 4096,
+  });
+  pdfBuffer = signer.sign(pdfBuffer, p12Buffer, {
+    passphrase: process.env.DIRECTOR_PASSPHRASE,
+  });
   // const timestamp = new Date();
   const { signature, signedData } = extractSignature(pdfBuffer);
   fs.writeFileSync(
@@ -50,15 +61,17 @@ export const registrarSign = async (
   let pdfBuffer = fs.readFileSync(
     path.resolve(__dirname, `../../files/${type}s/${filepath}`)
   );
-  pdfBuffer = plainAddPlaceholder({
-    pdfBuffer,
-    reason: 'Verified by the registrar',
-    location: `IIIT Delhi ${timestamp}`,
-    name: 'Registrar',
-    contactInfo: 'registrar@iiitd.ac.in',
-    signatureLength: 4096,
+  // pdfBuffer = plainAddPlaceholder({
+  //   pdfBuffer,
+  //   reason: 'Verified by the registrar',
+  //   location: `IIIT Delhi ${timestamp}`,
+  //   name: 'Registrar',
+  //   contactInfo: 'registrar@iiitd.ac.in',
+  //   signatureLength: 4096,
+  // });
+  pdfBuffer = signer.sign(pdfBuffer, p12Buffer, {
+    passphrase: process.env.REGISTRAR_PASSPHRASE,
   });
-  pdfBuffer = signer.sign(pdfBuffer, p12Buffer);
   // const timestamp = new Date();
   const { signature, signedData } = extractSignature(pdfBuffer);
   fs.writeFileSync(

@@ -14,13 +14,15 @@ export const users: User[] = [
     role: Role.STUDENT,
   },
   {
-    username: 'registrar',
+    username: '2019235',
     password: 'password',
-    role: Role.REGISTRAR,
+    name: 'Meetakshi Setiya',
+    role: Role.STUDENT,
   },
   {
-    username: 'director',
+    username: '2019022',
     password: 'password',
-    role: Role.DIRECTOR,
+    name: 'Ansh Arora',
+    role: Role.STUDENT,
   },
 ];

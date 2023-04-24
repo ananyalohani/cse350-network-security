@@ -20,21 +20,13 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
       };
     }
 
-    if (decoded.username === 'registrar' || decoded.username === 'director') {
-      return {
-        redirect: {
-          destination: '/sign',
-          permanent: false,
-        },
-      };
-    } else {
-      return {
-        redirect: {
-          destination: '/transcript',
-          permanent: false,
-        },
-      };
-    }
+    return {
+      redirect: {
+        destination: '/transcript',
+        permanent: false,
+      },
+      props: {},
+    };
   }
 
   return {
@@ -67,26 +59,8 @@ export default function Home() {
         maxAge: 30 * 24 * 60 * 60,
         path: '/',
       });
-
-      if (user.username === 'registrar' || user.username === 'director') {
-        router.push('/sign');
-      } else {
-        router.push('/transcript');
-      }
+      router.push('/transcript');
     }
-
-    const res = await fetch('http://localhost:5000/hidden', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `JWT ${data.accessToken}`,
-      },
-      body: JSON.stringify({
-        username: user.username,
-      }),
-    });
-    const d = await res.json();
-    console.log(d);
   };
 
   return (
@@ -94,11 +68,11 @@ export default function Home() {
       className={`flex min-h-screen flex-col items-center p-24 ${inter.className}`}
     >
       <h1 className='text-3xl font-bold'>User Login</h1>
-      <form className='flex flex-col space-y-2 mt-8' onSubmit={handleSubmit}>
+      <form className='flex flex-col mt-8 space-y-2' onSubmit={handleSubmit}>
         <input
           type='text'
           placeholder='Username'
-          className='border border-gray-200 rounded py-1 px-2'
+          className='px-2 py-1 border border-gray-200 rounded'
           onChange={(e) => {
             setUser({ ...user, username: e.target.value });
           }}
@@ -106,14 +80,14 @@ export default function Home() {
         <input
           type='password'
           placeholder='Password'
-          className='border border-gray-200 rounded py-1 px-2'
+          className='px-2 py-1 border border-gray-200 rounded'
           onChange={(e) => {
             setUser({ ...user, password: e.target.value });
           }}
         />
         <button
           type='submit'
-          className='bg-blue-500 rounded py-1 px-2 text-white'
+          className='px-2 py-1 text-white bg-blue-500 rounded'
         >
           Login
         </button>
